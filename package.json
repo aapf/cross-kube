@@ -59,7 +59,7 @@
     "abort-controller": "^3.0.0",
     "fetch-readablestream": "^0.2.0",
     "mkdirp": "^1.0.4",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "query-string": "^6.12.1",
     "rimraf": "^3.0.2",
     "tslib": "^2.0.0"
