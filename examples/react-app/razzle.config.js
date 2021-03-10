@@ -3,17 +3,18 @@
 module.exports = {
   plugins: ['typescript'],
 
-  modify: (config, env) => {
+  modifyWebpackConfig: ({ webpackConfig }) => {
     // This is required to import cross-kube as ES module
     // https://github.com/jaredpalmer/razzle/issues/842
-    delete config.externals;
+    delete webpackConfig.externals;
+
 
     // For debugging
     // config.mode = 'development'
     // if (config.optimization) {
-    //   config.optimization.minimize = false;
+    //   webpackConfig.optimization.minimize = false;
     // }
 
-    return config;
+    return webpackConfig;
   }
 };

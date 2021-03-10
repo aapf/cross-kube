@@ -20,10 +20,8 @@ const port = parseInt(process.env.PORT || '3000', 10);
 
 export default express()
   .use((req, res) => app.handle(req, res))
-  .listen(port, (err: Error) => {
-    if (err) {
-      console.error(err);
-      return;
-    }
+  .listen(port, () => {
     console.log(`> Started on port ${port}`);
+  }).on('error', (error) => {
+    console.log(error);
   });

@@ -22,10 +22,10 @@ app.disable('x-powered-by');
 
 if (process.env.NODE_ENV === 'development') {
   // tslint:disable-next-line
-  const proxy = require('http-proxy-middleware');
+  const { createProxyMiddleware } = require('http-proxy-middleware');
   app.use(
     '/api',
-    proxy({
+    createProxyMiddleware({
       autoRewrite: true,
       changeOrigin: true,
       onError: console.error,
