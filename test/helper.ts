@@ -21,6 +21,7 @@ export function podManifest(overwrite: NestedPartial<V1Pod> = {}): V1Pod {
       name: 'pod-1'
     },
     spec: {
+      terminationGracePeriodSeconds: 0,
       containers: [
         {
           name: 'web',

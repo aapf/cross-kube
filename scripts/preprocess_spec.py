@@ -32,7 +32,9 @@ import urllib3
 WATCH_OP_PREFIX = "watch"
 WATCH_OP_SUFFIX = "List"
 LIST_OP_PREFIX = "list"
+DELETECOLLECTION_OP_PREFIX = "deleteCollection"
 WATCH_QUERY_PARAM_NAME = "watch"
+ALLOW_WATCH_BOOKMARKS_QUERY_PARAM_NAME = "allowWatchBookmarks"
 
 CUSTOM_OBJECTS_SPEC_PATH = os.path.join(
     os.path.dirname(__file__),
@@ -99,12 +101,58 @@ def remove_watch_operations(op, parent, operation_ids):
     return True
 
 
+def strip_delete_collection_operation_watch_params(op, parent):
+    op_id = op['operationId']
+    if not op_id.startswith(DELETECOLLECTION_OP_PREFIX):
+        return
+    params = []
+    if 'parameters' in op:
+        for i in range(len(op['parameters'])):
+            paramName = op['parameters'][i]['name']
+            if paramName != WATCH_QUERY_PARAM_NAME and paramName != ALLOW_WATCH_BOOKMARKS_QUERY_PARAM_NAME:
+                params.append(op['parameters'][i])
+    op['parameters'] = params
+    return False
+
+
+def strip_401_response(operation, _):
+    if operation.has_key('responses'):
+        operation['responses'].pop('401', None)
+        if len(operation['responses']) == 0:
+            operation['responses']['200'] = { 'description': 'OK' }
+
+
+def transform_to_csharp_stream_response(operation, _):
+    if operation.get('operationId', None) == 'readNamespacedPodLog' or operation.get('x-kubernetes-action', None) == 'connect':
+        operation['responses']['200']["schema"] = {
+            "type": "object", 
+            "format": "file" ,
+        }
+
+def transform_to_csharp_consume_json(operation, _):
+    if operation.get('consumes', None) == ["*/*",] or operation.get('consumes', None) == "*/*":
+        operation['consumes'] = ["application/json"]
+
 def strip_tags_from_operation_id(operation, _):
     operation_id = operation['operationId']
     if 'tags' in operation:
         for t in operation['tags']:
             operation_id = operation_id.replace(_to_camel_case(t), '')
         operation['operationId'] = operation_id
+
+def clean_crd_meta(spec):
+    for k, v in spec['definitions'].items():
+        if k.endswith('List'):
+            print("Using built-in v1.ListMeta")
+            v['properties']['metadata']['$ref'] = '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
+            v['properties']['metadata'].pop('properties', None)
+        find_rename_ref_recursive(spec, '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta', '#/definitions/v1.ListMeta')
+        find_rename_ref_recursive(spec, '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta', '#/definitions/v1.ObjectMeta')
+        find_rename_ref_recursive(spec, '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Status', '#/definitions/v1.Status')
+        find_rename_ref_recursive(spec, '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Patch', '#/definitions/v1.Patch')
+        find_rename_ref_recursive(spec, '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.DeleteOptions', '#/definitions/v1.DeleteOptions')
+        find_rename_ref_recursive(spec, '#/definitions/io.k8s.api.autoscaling.v1.Scale', '#/definitions/v1.Scale')
+
 
 def add_custom_objects_spec(spec):
     with open(CUSTOM_OBJECTS_SPEC_PATH, 'r') as custom_objects_spec_file:
@@ -119,10 +167,37 @@ def add_codegen_request_body(operation, _):
         if operation['parameters'][0].get('in') == 'body':
             operation['x-codegen-request-body-name'] = 'body'
 
-def process_swagger(spec, client_language):
+def drop_paths(spec):
+    paths = {}
+    if (os.environ.get('GENERATE_APIS') or False):
+        group_prefix = os.environ.get('KUBERNETES_CRD_GROUP_PREFIX')
+        group_prefix_reversed = '.'.join(group_prefix.split('.')[::-1])
+        for k, v in spec['paths'].items():
+            if k.startswith('/apis/' + group_prefix_reversed):
+                paths[k] = v
+            else:
+                print("Ignoring non Custom Resource api path %s" %k)
+    spec['paths'] = paths
+
+
+def process_swagger(spec, client_language, crd_mode=False):
     spec = add_custom_objects_spec(spec)
 
+    if crd_mode:
+        drop_paths(spec)
+
     apply_func_to_spec_operations(spec, strip_tags_from_operation_id)
+
+    if client_language == "csharp":
+        # 401s in the spec block the csharp code generator from throwing on 401
+        apply_func_to_spec_operations(spec, strip_401_response)
+
+        # force to autorest to generate stream
+        apply_func_to_spec_operations(spec, transform_to_csharp_stream_response)
+        # force to consume json if */* 
+        apply_func_to_spec_operations(spec, transform_to_csharp_consume_json)
+
+    apply_func_to_spec_operations(spec, strip_delete_collection_operation_watch_params)
 
     apply_func_to_spec_operations(spec, add_codegen_request_body)
 
@@ -136,23 +211,52 @@ def process_swagger(spec, client_language):
     except PreprocessingException as e:
         print(e)
 
-    remove_model_prefixes(spec)
+
+    if crd_mode:
+        filter_api_group(spec)
+    remove_model_prefixes(spec, crd_mode)
 
     inline_primitive_models(spec, preserved_primitives_for_language(client_language))
 
+    if crd_mode:
+        clean_crd_meta(spec)
+
+    add_custom_formatting(spec, format_for_language(client_language))
+    add_custom_typing(spec, type_for_language(client_language))
+
     remove_models(spec, removed_models_for_language(client_language))
+
+    add_openapi_codegen_x_implement_extension(spec, client_language)
 
     return spec
 
 def preserved_primitives_for_language(client_language):
     if client_language == "java":
-        return ["intstr.IntOrString", "resource.Quantity"]
+        return ["intstr.IntOrString", "resource.Quantity", "v1.Patch"]
     elif client_language == "csharp":
         return ["intstr.IntOrString", "resource.Quantity", "v1.Patch"]
     elif client_language == "haskell-http-client":
         return ["intstr.IntOrString", "resource.Quantity"]
     else:
         return []
+
+def format_for_language(client_language):
+    if client_language == "java":
+        return {"resource.Quantity": "quantity", "v1.Patch": "patch"}
+    else:
+        return {}
+
+def type_for_language(client_language):
+    if client_language == "java":
+        return {"v1.Patch": { "type": "string"}}
+    elif client_language == "csharp":
+        return {
+                "v1.Patch": { "type": "object", "properties": {"content": { "type": "object"}} }, 
+                "resource.Quantity": { "type": "object", "properties": {"value": { "type": "string"}} }, 
+                "intstr.IntOrString" : { "type": "object", "properties": {"value": { "type": "string"}} },
+               }
+    else:
+        return {}
 
 def removed_models_for_language(client_language):
     if client_language == "haskell-http-client":
@@ -197,6 +301,16 @@ def is_model_deprecated(m):
         return False
     return m["description"].startswith("Deprecated.")
 
+def filter_api_group(spec):
+    models = {}
+    for k, v in spec['definitions'].items():
+        if k.startswith("io.k8s"):
+            print("Removing builtin Kubernetes Resource %s" %k)
+        elif not k.startswith(os.environ.get('KUBERNETES_CRD_GROUP_PREFIX')):
+            print("Ignoring Custom Resource %s" %k)
+        else:
+            models[k] = v
+    spec['definitions'] = models
 
 def remove_deprecated_models(spec):
     """
@@ -214,7 +328,7 @@ def remove_deprecated_models(spec):
     spec['definitions'] = models
 
 
-def remove_model_prefixes(spec):
+def remove_model_prefixes(spec, crd_mode=False):
     """Remove full package name from OpenAPI model names.
 
     Starting kubernetes 1.6, all models has full package name. This is
@@ -230,6 +344,9 @@ def remove_model_prefixes(spec):
     for k, v in spec['definitions'].items():
         if k.startswith("io.k8s"):
             models[k] = {"split_n": 2}
+        elif crd_mode and k.startswith(os.environ.get('KUBERNETES_CRD_GROUP_PREFIX')):
+            if os.environ.get('OPENAPI_MODEL_LENGTH') or False:
+                models[k] = {"split_n": int(os.environ.get('OPENAPI_MODEL_LENGTH'))}
 
     conflict = True
     while conflict:
@@ -302,6 +419,39 @@ def inline_primitive_models(spec, excluded_primitives):
     for k in to_remove_models:
         del spec['definitions'][k]
 
+def add_custom_formatting(spec, custom_formats):
+    for k, v in spec['definitions'].items():
+        if k not in custom_formats:
+            continue
+        v["format"] = custom_formats[k]
+
+def add_custom_typing(spec, custom_types):
+    for k, v in spec['definitions'].items():
+        if k not in custom_types:
+            continue
+        v.update(custom_types[k])
+
+def add_openapi_codegen_x_implement_extension(spec, client_language):
+    if client_language != "java":
+        return
+    if os.environ.get('OPENAPI_SKIP_BASE_INTERFACE') or False:
+        return
+    for k, v in spec['definitions'].items():
+        if "x-kubernetes-group-version-kind" not in v:
+            continue
+        if k == "v1.Status":
+            # Status is explicitly exlucded because it's obviously not a list object
+            # but it has ListMeta.
+            continue
+        if "metadata" not in v['properties']:
+            continue # not a legitimate kubernetes api object
+        if v["properties"]["metadata"]["$ref"] == "#/definitions/v1.ListMeta":
+            v["x-implements"] = ["io.kubernetes.client.common.KubernetesListObject"]
+        elif v["properties"]["metadata"]["$ref"] == "#/definitions/v1.ObjectMeta":
+            v["x-implements"] = ["io.kubernetes.client.common.KubernetesObject"]
+
+
+
 def write_json(filename, object):
     with open(filename, 'w') as out:
         json.dump(object, out, sort_keys=False, indent=2, separators=(',', ': '), ensure_ascii=True)
@@ -316,7 +466,7 @@ def main():
     )
     argparser.add_argument(
         'kubernetes_branch',
-        help='Branch of github.com/kubernetes/kubernetes to get spec from'
+        help='Branch/tag of github.com/kubernetes/kubernetes to get spec from'
     )
     argparser.add_argument(
         'output_spec_path',
@@ -334,24 +484,33 @@ def main():
     )
     args = argparser.parse_args()
 
-    spec_url = 'https://raw.githubusercontent.com/%s/%s/' \
+    unprocessed_spec = args.output_spec_path + ".unprocessed"
+    in_spec = ""
+    if os.environ.get("OPENAPI_SKIP_FETCH_SPEC") or False:
+        with open(unprocessed_spec, 'r') as content:
+            in_spec = json.load(content, object_pairs_hook=OrderedDict)
+    else:
+        proxy = os.getenv('HTTP_PROXY')
+        if proxy:
+            pool = urllib3.proxy_from_url(proxy)
+        else:
+            pool = urllib3.PoolManager()
+        spec_url = 'https://raw.githubusercontent.com/%s/%s/' \
                '%s/api/openapi-spec/swagger.json' % (args.username,
                                                      args.repository,
                                                      args.kubernetes_branch)
-
-    proxy = os.getenv('HTTP_PROXY')
-    if proxy:
-        pool = urllib3.proxy_from_url(proxy)
-    else:
-        pool = urllib3.PoolManager()
-    with pool.request('GET', spec_url, preload_content=False) as response:
-        if response.status != 200:
-            print("Error downloading spec file %s. Reason: %s" % (spec_url, response.reason))
-            return 1
-        in_spec = json.load(response, object_pairs_hook=OrderedDict)
-        write_json(args.output_spec_path + ".unprocessed", in_spec)
-        out_spec = process_swagger(in_spec, args.client_language)
-        write_json(args.output_spec_path, out_spec)
+        with pool.request('GET', spec_url, preload_content=False) as response:
+            if response.status != 200:
+                print("Error downloading spec file %s. Reason: %s" % (spec_url, response.reason))
+                return 1
+            in_spec = json.load(response, object_pairs_hook=OrderedDict)
+    write_json(unprocessed_spec, in_spec)
+    # use version from branch/tag name if spec doesn't provide it
+    if in_spec['info']['version'] == 'unversioned':
+        in_spec['info']['version'] = args.kubernetes_branch
+    crd_mode = os.environ.get('KUBERNETES_CRD_MODE') or False
+    out_spec = process_swagger(in_spec, args.client_language, crd_mode)
+    write_json(args.output_spec_path, out_spec)
     return 0
 
 

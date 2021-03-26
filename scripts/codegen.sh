@@ -17,7 +17,7 @@ mkdir -p "${OUTPUT_DIR}"
 python "${SCRIPT_ROOT}/preprocess_spec.py" \
     crosskube "${KUBERNETES_BRANCH}" "${SWAGGER_JSON}" kubernetes kubernetes
 
-PLUGIN_VERSION=4.0.3
+PLUGIN_VERSION=5.1.0
 mvn -f cross-kube.xml compile \
     -Dgenerator.spec.path="${SWAGGER_JSON}" \
     -Dgenerator.output.path="${OUTPUT_DIR}" \
@@ -27,15 +27,15 @@ mvn -f cross-kube.xml compile \
     -Dopenapi-generator-version="${PLUGIN_VERSION}"
 
 # Cannot generate code for LogsApi correctly
-rm -f generated/apis/LogsApi.ts
+rm -f generated/src/apis/LogsApi.ts
 
-for f in generated/models/*.ts; do
-    g=${f#generated/models/}
+for f in generated/src/models/*.ts; do
+    g=${f#generated/src/models/}
     m=${g%%.ts}
-    echo "export * from './${m}'" >>generated/models/index.ts
+    echo "export * from './${m}'" >>generated/src/models/index.ts
 done
 
-cp -rpfv generated/{models,apis} src
+cp -rpfv generated/src/{models,apis} src
 
 tslint --fix src/models/*.ts
 tslint --fix src/apis/*.ts

@@ -27,7 +27,7 @@ export default class Codegen extends BaseCommand {
     branch: flags.string({
       char: 'b',
       description: 'Kubernets Git branch to get swagger.json',
-      default: 'release-1.14'
+      default: 'release-1.19'
     })
   }
 

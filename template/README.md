@@ -14,4 +14,4 @@ These files are modified as follows:
 - Change format from mustache to handlebars
 - Fit to kubernetes API
 
-[openapi-generator]:https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator/src/main/resources/typescript-fetch
+[openapi-generator]:https://github.com/OpenAPITools/openapi-generator/tree/v5.1.0/modules/openapi-generator/src/main/resources/typescript-fetch

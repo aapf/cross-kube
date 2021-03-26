@@ -83,7 +83,7 @@ describe('V1Pod API', () => {
     expect(read.spec!.containers![0].name).toEqual(created.spec!.containers![0].name)
     expect(read.status).toBeDefined()
 
-    await sleep(3000)
+    await sleep(10000)
 
     const patched = await patchNamespacedPod(
       {
@@ -102,7 +102,7 @@ describe('V1Pod API', () => {
     expect(patched.metadata!.name).toEqual('pod-1')
     expect(patched.metadata!.labels!['patched']).toEqual('true')
 
-    await sleep(1000)
+    await sleep(10000)
 
     const replaced = await replaceNamespacedPod(
       {
@@ -175,7 +175,11 @@ describe('V1Pod API', () => {
 
     expect(events).toHaveLength(0)
 
-    const pod1 = podManifest()
+    const pod1 = podManifest({
+      metadata: {
+        name: 'pod-watch-1'
+      },
+    })
     await createNamespacedPod(
       {
         namespace: testNamespace,

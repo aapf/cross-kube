@@ -1,4 +1,5 @@
-// tslint:disable
+/* tslint:disable */
+/* eslint-disable */
 {{>licenseInfo}}
 
 import {
@@ -21,11 +22,11 @@ import {{className}} from '../models/{{className}}';
 {{~#operation}}
 {{~#allParams.0}}
 interface {{operationIdCamelCase}}Request {
-    {{~#allParams}}
-    {{~#neq paramName "watch"}}
-    {{paramName}}{{^required}}?{{/required}}: {{#isEnum}}{{{datatypeWithEnum}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}};
-    {{~/neq}}
-    {{~/allParams}}
+{{#allParams}}
+{{~#neq paramName "watch"}}
+    {{paramName}}{{^required}}?{{/required}}: {{#isEnum}}{{{datatypeWithEnum}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{#isNullable}} | null{{/isNullable}}{{/isEnum}};
+{{~/neq}}
+{{/allParams}}
 }
 
 {{/allParams.0}}
@@ -60,7 +61,7 @@ interface {{operationIdCamelCase}}Request {
         {{~/isDateTime}}
         {{~^isDateTime}}
         {{~#isDate}}
-        queryParameters['{{baseName}}'] = (requestParameters.{{paramName}} as any).toISOString();
+        queryParameters['{{baseName}}'] = (requestParameters.{{paramName}} as any).toISOString().substr(0,10);
         {{~/isDate}}
         {{~^isDate}}
         queryParameters['{{baseName}}'] = requestParameters.{{paramName}};
@@ -125,7 +126,7 @@ interface {{operationIdCamelCase}}Request {
         {{~/isDateTime}}
         {{~^isDateTime}}
         {{~#isDate}}
-        queryParameters['{{baseName}}'] = (requestParameters.{{paramName}} as any).toISOString();
+        queryParameters['{{baseName}}'] = (requestParameters.{{paramName}} as any).toISOString().substr(0,10);
         {{~/isDate}}
         {{~^isDate}}
         queryParameters['{{baseName}}'] = requestParameters.{{paramName}};
@@ -164,9 +165,9 @@ interface {{operationIdCamelCase}}Request {
     }, ...requestOptsArray);
 
     {{~#returnTypeIsPrimitive}}
-    {{~#isMapContainer}}
+    {{~#isMap}}
     return new JSONApiResponse<any>(response);
-    {{~/isMapContainer}}
+    {{~/isMap}}
     {{~#returnSimpleType}}
     {{~#eq returnType "string"}}
     return new StringApiResponse(response);
