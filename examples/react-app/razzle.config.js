@@ -17,7 +17,8 @@ module.exports = {
     // This is required to import cross-kube as ES module
     // https://github.com/jaredpalmer/razzle/issues/842
     webpackOptions.notNodeExternalResMatch = (request, context) => {
-      const result = request.match(/cross-kube[/\\]lib[/\\]/)
+      const result = request.match(/^cross-kube$/) ||
+        request.match(/^cross-kube[/\\]lib[/\\]/)
       return result != null
     }
     return webpackOptions
