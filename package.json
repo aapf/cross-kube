@@ -47,7 +47,8 @@
     "lint": "scripty",
     "precommit": "scripty",
     "local-link": "scripty",
-    "local-unlink": "scripty"
+    "local-unlink": "scripty",
+    "prepare": "husky install"
   },
   "scripty": {
     "silent": true
@@ -81,7 +82,7 @@
     "debug": "^4.3.1",
     "deepmerge": "^4.2.2",
     "https-proxy-agent": "^5.0.0",
-    "husky": "^3.1.0",
+    "husky": "^6.0.0",
     "jest": "^26.6.3",
     "jest-config": "^26.6.3",
     "js-yaml": "^4.0.0",
