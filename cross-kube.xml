@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>local.cross-kube</groupId>
     <artifactId>cross-kube</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
     <name>cross-kube</name>
     <url>http://github.com/aapf/cross-kube</url>
     <build>
@@ -64,7 +64,7 @@
         <generator.output.path>.</generator.output.path>
         <generator.spec.path>swagger.json</generator.spec.path>
         <generator.package.name>client</generator.package.name>
-        <generator.client.version>0.1.0</generator.client.version>
+        <generator.client.version>0.2.0</generator.client.version>
     </properties>
 </project>
 
