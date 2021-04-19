@@ -87,7 +87,7 @@ export default abstract class BaseCommand extends Command {
       res.body.on('error', (err: any) => {
         reject(err)
       })
-      stream.on('finish', () => resolve())
+      stream.on('finish', () => resolve(null))
     })
   }
 }

@@ -255,7 +255,7 @@ async function requestChunks(
       .then(() => {
         closed = true
       })
-      .catch(err => {
+      .catch((err) => {
         if (
           `${err}` === 'TypeError: The expression cannot be converted to return the specified type.'
         ) {
@@ -288,7 +288,7 @@ async function requestChunks(
       })
       response.body.on('end', () => {
         response.body && response.body.end()
-        resolve()
+        resolve(null)
       })
     })
   }

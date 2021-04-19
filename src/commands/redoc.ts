@@ -21,7 +21,7 @@ export default class ReDoc extends BaseCommand {
     image: flags.string({
       char: 'i',
       description: 'Docker image name',
-      default: 'redocly/redoc:v2.0.0-rc.8-1'
+      default: 'redocly/redoc:v2.0.0-rc.50'
     }),
     proxy: flags.string({
       char: 'P',
@@ -45,7 +45,7 @@ export default class ReDoc extends BaseCommand {
     this.log(`URL: http://localhost:${port}`)
 
     await this.exec('sed', [
-      's|k8s-swagger.json|https://raw.githubusercontent.com/kubernetes/kubernetes/release-1.14/api/openapi-spec/swagger.json|; w swagger-redoc.yaml',
+      's|k8s-swagger.json|https://raw.githubusercontent.com/kubernetes/kubernetes/release-1.19/api/openapi-spec/swagger.json|; w swagger-redoc.yaml',
       'swagger.yaml'
     ])
 
