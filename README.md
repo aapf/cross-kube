@@ -9,7 +9,7 @@ cross-kube uses WHATWG [Fetch](https://fetch.spec.whatwg.org/) and [Streams](htt
 The following libraries are used internally:
 
 * in browsers:
-  * [fetch-readablestream](https://github.com/jonnyreeves/fetch-readablestream): A compatibility layer of [WHATWG Streams](https://streams.spec.whatwg.org/) 
+  * [fetch-readablestream](https://github.com/jonnyreeves/fetch-readablestream): A compatibility layer of [WHATWG Streams](https://streams.spec.whatwg.org/)
 * in Node.js:
   * [node-fetch](https://www.npmjs.com/package/node-fetch): `fetch()` for Node.js
 
@@ -184,5 +184,5 @@ This software includes the work that is distributed in the Apache License 2.0
 
 ## Contributing
 
-We are preparing a CLA(Contributor License Agreement).  
+We are preparing a CLA(Contributor License Agreement).
 So, we can not accept Pull request now.
