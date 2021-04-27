@@ -66,7 +66,7 @@
     "tslib": "^2.1.0"
   },
   "devDependencies": {
-    "@kubernetes/client-node": "^0.14.0",
+    "@kubernetes/client-node": "^0.14.3",
     "@oclif/dev-cli": "^1.26.0",
     "@rollup/plugin-commonjs": "^17.1.0",
     "@rollup/plugin-json": "^4.1.0",
