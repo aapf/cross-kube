@@ -41,7 +41,7 @@ import { RequestOpts, ApiResponse } from 'cross-kube'
 Install cross-kube from the Git repo:
 
 ```sh
-$ npm install git://github.com/aapf/cross-kube.git
+npm install git://github.com/aapf/cross-kube.git
 ```
 
 (After cross-kube is published, it will be `npm install cross-kube`.)

@@ -3,37 +3,37 @@
 ## Initializing Project
 
 ```sh
-$ yarn
+yarn
 ```
 
 ## ReDoc
 
 ```sh
-$ cross-kube redoc
+cross-kube redoc
 ```
 
 ## Code Generation
 
 ```sh
-$ cross-kube codegen
+cross-kube codegen
 ```
 
 If you use an HTTP proxy specify `--proxy <proxy-server-url>`
 
 ```sh
-$ cross-kube codegen --proxy http://proxy.example.com:8080
+cross-kube codegen --proxy http://proxy.example.com:8080
 ```
 
 ## Creating CRD
 
 ```sh
-$ yarn create-crd
+yarn create-crd
 ```
 
 ## Debug
 
 You can see the debug messages by setting `DEBUG` environment variable.
 
-```
-$ DEBUG="cross-kube:*" cross-kube codegen
+```sh
+DEBUG="cross-kube:*" cross-kube codegen
 ```
