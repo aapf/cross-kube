@@ -43,7 +43,7 @@ and also edit `$HOME/.m2/settings.xml`:
 `src/models/` and `src/apis/` are generated from the OpenAPI spec of Kubernetes API as follows:
 
 ```sh
-$ yarn codegen
+yarn codegen
 ```
 
 This command executes `scripts/codegen` which does:
@@ -72,7 +72,7 @@ The code templates are based on OpenAPI Generator's official `typescript-fetch`.
 TypeScript source files in `src/` are transpiled into JavaScript files in `lib/` by:
 
 ```sh
-$ yarn build
+yarn build
 ```
 
 `yarn build` runs [Rollup.js](https://rollupjs.org/) internally. See [rollup.config.ts](rollup.config.ts).
@@ -146,19 +146,19 @@ There is a React example app in `examples/react-app`.
 You need to link `cross-kube` and `react-app` before launching it.
 
 ```sh
-$ yarn local-link
-$ cd examples/react-app
-$ yarn
+yarn local-link
+cd examples/react-app
+yarn
 ```
 
 Launch Kubernetes API proxy with port 4000:
 
 ```sh
-$ kubectl proxy -p 4000
+kubectl proxy -p 4000
 ```
 
 Start the dev-server:
 
 ```sh
-$ yarn start
+yarn start
 ```
